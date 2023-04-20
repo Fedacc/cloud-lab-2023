@@ -48,4 +48,26 @@ def search():
 def healthcheck():
     return {"status": "healthy"}
 
+####################################
+########### LOGIN ##################
+
+# example login (outdated, using a previous version of flask-login): https://pythonbasics.org/flask-login/
+# documentation: https://flask-login.readthedocs.io/en/latest/
+
+from flask_login import LoginManager, login_user
+
+from UserModel import User #import user model
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# Login page
+@app.route("/login", methods=["GET"])
+def loginpage():
+    return render_template("login.html")
+
+
+####################################
+
+
 app.run(host='0.0.0.0', port=8080)
