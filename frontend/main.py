@@ -7,19 +7,26 @@ load_dotenv()
 import json, os
 import requests
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, redirect, session
+from flask_login import LoginManager, login_user, logout_user, login_required
+
 
 SEARCH_NLU_ENDPOINT = os.getenv("SEARCH_NLU_ENDPOINT")
+
+AUTHENTICATION_USERNAME = os.getenv("AUTH_USERNAME")
+AUTHENTICATION_PASSWORD = os.getenv("AUTH_PASSWORD")
 
 # CREATE FLASK SERVER
 app = Flask("frontend-flask")
 
 # Main page
 @app.route("/", methods=["GET"])
+@login_required
 def homepage():
     return render_template("index.html")
 
 @app.route("/analyze", methods=["POST"])
+@login_required
 def search():
     print("Received call to /search endpoint")
     # collecting parametes
@@ -54,18 +61,68 @@ def healthcheck():
 # example login (outdated, using a previous version of flask-login): https://pythonbasics.org/flask-login/
 # documentation: https://flask-login.readthedocs.io/en/latest/
 
-from flask_login import LoginManager, login_user
-
 from UserModel import User #import user model
+tester = User()
 
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+# setup a unique and not disclosed value for the secret of the session
+app.secret_key = os.getenv("SESSION_SECRET")
+
+
+# tell flask how to retrieve the user
+@login_manager.user_loader
+def load_user(user_id):
+    print("checking if user is logged in",user_id,tester.get_id())
+    if tester.get_id() == user_id:
+        print("user is logged in")
+        return tester
+    else:
+        print("user is NOT logged in")
+        return None
+
+# tell flask what to do if a user that is NOT authenticated tries to access a protected page
+@login_manager.unauthorized_handler
+def unauthorized():
+    return redirect('/login')
 
 # Login page
 @app.route("/login", methods=["GET"])
 def loginpage():
     return render_template("login.html")
 
+@app.route("/login", methods=["POST"])
+def login():
+    # collect login parameters of the user
+    form_username = request.form['username']
+    form_password = request.form['password']
+
+    print("user tried to login:",form_username,form_password)
+    
+
+    # check if the username and password are correct
+    if form_username == AUTHENTICATION_USERNAME and form_password == AUTHENTICATION_PASSWORD:
+        # log in the user
+        # .....
+        print("username and password correct, logging in the user")
+        session['username'] = form_username
+        login_user(tester)
+        # redirect the user to the / main page
+        return redirect("/")
+
+    else:
+        # user is not authorized
+        print("username and password not correct")
+        # redirect the user to the /login page
+        return redirect("/login")
+
+@app.route("/logout", methods=["GET"])
+def logout():
+    logout_user()
+    session.pop('username', None)
+    session['logged_in']=False
+    return redirect("/login")
 
 ####################################
 
