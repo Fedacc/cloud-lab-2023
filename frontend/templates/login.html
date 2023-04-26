@@ -11,5 +11,22 @@
          - submit
          and submit the results with a POST to /login -->
 
+        <form action="/login" method="post">
+            <!-- Capture the username  -->
+            <input 
+                type="text"
+                id="input-username"
+                name="username" 
+                placeholder="Insert username">
+            </br></br>
+
+            <!-- Capture the password  -->
+            <input type="password" id="input-password" name="password" placeholder="Insert password">
+            </br></br>
+    
+            <!-- Insert a button to submit the request to the flask server -->
+            <input type="submit" value="LOGIN">
+        </form>
+
     </body>
 </html>
