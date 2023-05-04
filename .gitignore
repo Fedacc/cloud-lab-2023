@@ -1,3 +1,8 @@
 .env
 frontend-test
 __pycache__
+
+# terraform directory
+.terraform
+.terraform.lock*
+terraform.tfstate*
