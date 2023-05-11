@@ -30,3 +30,70 @@ resource "ibm_resource_key" "nlu_resource_key" {
     delete = "5m"
   }
 }
+
+
+# create a kubernetes cluster
+resource "ibm_container_cluster" "free_cluster" {
+  name              = "cloud-lab-cluster"
+  resource_group_id = data.ibm_resource_group.resource_group.id
+  datacenter        = "mil01"
+  machine_type      = "free"
+  hardware          = "shared"
+  wait_till         = "OneWorkerNodeReady"
+  labels = {
+    "test" = "lab-pool"
+  }
+
+}
+
+
+# set up the container registry - create a container registry namespace
+resource "ibm_cr_namespace" "cr_namespace" {
+  name              = "cloud-lab-${var.cr_suffix}"
+  resource_group_id = data.ibm_resource_group.resource_group.id
+}
+
+# interact with the kubernetes cluster - example: create a secret
+
+# collect cluster configuration info for access
+data "ibm_container_cluster_config" "cluster_config" {
+  cluster_name_id = ibm_container_cluster.free_cluster.id
+  admin           = true
+}
+
+# collect all the namespaces names in the kubernetes cluster
+data "kubernetes_all_namespaces" "allns" {}
+
+# TASK: create a configmap and secret for the microservice SEARCH-NLU
+#
+# CONFIGMAP VALUES:
+# - NLU_BASEURL=string
+# - NLU_VERSION=string
+#
+# SECRET VALUES:
+# - NLU_APIKEY=string
+
+resource "kubernetes_secret" "search_nlu_secret" {
+  type = "Opaque"
+  metadata {
+    name      = "search-nlu-secret"
+    namespace = "default"
+  }
+
+  data = {
+    NLU_APIKEY = ibm_resource_key.nlu_resource_key.credentials.apikey
+  }
+
+}
+
+resource "kubernetes_config_map" "search_nlu_configmap" {
+  metadata {
+    name = "search-nlu-configmap"
+  }
+
+  data = {
+    NLU_BASEURL = ibm_resource_key.nlu_resource_key.credentials.url
+    NLU_VERSION = var.nlu_sdk_version
+  }
+
+}

@@ -21,3 +21,6 @@ output "nlu_service_credentials_apikey" {
   sensitive   = true
 }
 
+output "all-namespaces" {
+  value = data.kubernetes_all_namespaces.allns.namespaces
+}
